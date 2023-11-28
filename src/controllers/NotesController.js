@@ -3,7 +3,7 @@ const knex = require("../database/knex");
 class NotesController{
     async create(request, response){
         const{ title, description, tags, links} = request.body;
-        const user_id  = request.user_id;
+        const user_id  = request.user.id;
 
         const {note_id} = await knex("notes").insert({
             title,
@@ -34,7 +34,6 @@ class NotesController{
     }
 
 
-    
     async show(request, response){
         const { id } =  request.params;
         
@@ -43,7 +42,7 @@ class NotesController{
         const links = await knex("links").where({note_id: id}).orderBy("created_at");
 
         return response.json({
-            note,
+            ...note,
             tags,
             links
         });
@@ -76,7 +75,7 @@ class NotesController{
                     "notes.user_id",
                 ])
                 .where("notes.user_id", user_id)
-                .whereLike("notes.title", `% ${title}%` )
+                .whereLike("notes.title", `%${title}%`)
                 .whereIn("name", filterTags)
                 .innerJoin( "notes" , "notes.id", "tags.note_id")
                 .groupBy("notes.id")
@@ -86,11 +85,11 @@ class NotesController{
 
            notes = await knex ("notes")
             .where({ user_id,})
-            .whereLike("title", `% ${title}%`)//Usamos uma variável literal (%), envolvendo o conteúdo que está sendo pesquisado, para informar ao bd que se existir uma palavra em qualquer lugar para ele retornar pra mim.
+            .whereLike("title", `%${title}%`)//Usamos uma variável literal (%), envolvendo o conteúdo que está sendo pesquisado, para informar ao bd que se existir uma palavra em qualquer lugar para ele retornar pra mim.
             .orderBy("title");
         }
 
-        const userTags = await knex("tags").where({ user_id});
+        const userTags = await knex("tags").where({user_id});
         const notesWithTags = notes.map(note => {
             const noteTags = userTags.filter(tag => tag.note_id === note.id);
         
